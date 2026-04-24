@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Casa\Documents\_works\FunnyPlayer\native\build\CMakeFiles\be7df41ec8f85d3699b08ee8f11fd08a\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{30D7153E-E16C-3DA3-881D-C2EAF8541ED6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

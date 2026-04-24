@@ -1,0 +1,92 @@
+{
+  appId: "com.funnyplayer.app",
+  productName: "FunnyPlayer",
+  copyright: "Copyright © 2025",
+
+  // No code signing certificate — skip signing entirely
+  forceCodeSigning: false,
+  win: { sign: null },
+
+  directories: {
+    buildResources: "build",
+    output: "release"
+  },
+
+  // JS output from electron-vite; node_modules for production deps are added automatically
+  files: [
+    "out/**/*",
+    "!out/**/*.map"
+  ],
+
+  // Binaries that can't be executed from inside an asar archive
+  asarUnpack: [
+    "**/node_modules/ffmpeg-static/**",
+    "**/node_modules/ffprobe-static/**"
+  ],
+
+  // mpv_player.node → resources/mpv_player.node (accessed via process.resourcesPath)
+  extraResources: [
+    { from: "native/build/Release/mpv_player.node", to: "mpv_player.node" }
+  ],
+
+  // libmpv DLL lives next to the app executable so Windows can find it
+  extraFiles: [
+    { from: "libmpv-2.dll", to: "libmpv-2.dll" }
+  ],
+
+  // ──────────────── Windows ────────────────
+  win: {
+    icon: "build/icon.ico",
+    target: [
+      { target: "nsis",     arch: ["x64"] },
+      { target: "portable", arch: ["x64"] }
+    ],
+    fileAssociations: [
+      {
+        ext: ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v",
+              "ts", "mpg", "mpeg", "m2ts", "mts", "divx", "xvid"],
+        name: "Video File",
+        description: "Open with FunnyPlayer",
+        icon: "build/fileicon.ico",
+        role: "Viewer"
+      }
+    ]
+  },
+
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+    installerIcon: "build/icon.ico",
+    uninstallerIcon: "build/icon.ico",
+    artifactName: "${productName}-${version}-setup.exe"
+  },
+
+  portable: {
+    artifactName: "${productName}-${version}-portable.exe"
+  },
+
+  // ──────────────── Linux ────────────────
+  linux: {
+    icon: "build/icon.png",   // 512×512 PNG recommended
+    category: "AudioVideo",
+    target: [
+      { target: "AppImage", arch: ["x64"] },
+      { target: "deb",      arch: ["x64"] }
+    ],
+    fileAssociations: [
+      {
+        ext: ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v",
+              "ts", "mpg", "mpeg", "m2ts", "mts"],
+        name: "Video File",
+        mimeType: "video/mp4",
+        role: "Viewer"
+      }
+    ]
+  },
+
+  deb: {
+    depends: ["libmpv-dev"]
+  }
+}

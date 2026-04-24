@@ -1,0 +1,3 @@
+C:/Users/Casa/Documents/_works/FunnyPlayer/native/build/CMakeFiles/mpv_player.dir
+C:/Users/Casa/Documents/_works/FunnyPlayer/native/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Casa/Documents/_works/FunnyPlayer/native/build/CMakeFiles/ZERO_CHECK.dir

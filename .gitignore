@@ -1,0 +1,8 @@
+node_modules/
+out/
+dist/
+resources/mpv/*
+!resources/mpv/.gitkeep
+deps/mpv/lib/libmpv-2.dll
+libmpv-2.dll
+release
