@@ -90,14 +90,23 @@
       { target: "AppImage", arch: ["x64"] },
       { target: "deb",      arch: ["x64"] }
     ],
+    // AppImage's parser requires each fileAssociation entry to have a single
+    // string `ext` (arrays are accepted by Windows NSIS but rejected here).
+    // Each extension is paired with its canonical MIME type.
     fileAssociations: [
-      {
-        ext: ["mp4", "mkv", "avi", "mov", "wmv", "flv", "webm", "m4v",
-              "ts", "mpg", "mpeg", "m2ts", "mts"],
-        name: "Video File",
-        mimeType: "video/mp4",
-        role: "Viewer"
-      }
+      { ext: "mp4",  name: "MP4 Video",     mimeType: "video/mp4",         role: "Viewer" },
+      { ext: "m4v",  name: "M4V Video",     mimeType: "video/x-m4v",       role: "Viewer" },
+      { ext: "mkv",  name: "Matroska Video", mimeType: "video/x-matroska", role: "Viewer" },
+      { ext: "webm", name: "WebM Video",    mimeType: "video/webm",        role: "Viewer" },
+      { ext: "avi",  name: "AVI Video",     mimeType: "video/x-msvideo",   role: "Viewer" },
+      { ext: "mov",  name: "QuickTime Video", mimeType: "video/quicktime", role: "Viewer" },
+      { ext: "wmv",  name: "WMV Video",     mimeType: "video/x-ms-wmv",    role: "Viewer" },
+      { ext: "flv",  name: "Flash Video",   mimeType: "video/x-flv",       role: "Viewer" },
+      { ext: "mpg",  name: "MPEG Video",    mimeType: "video/mpeg",        role: "Viewer" },
+      { ext: "mpeg", name: "MPEG Video",    mimeType: "video/mpeg",        role: "Viewer" },
+      { ext: "ts",   name: "MPEG-TS Video", mimeType: "video/mp2t",        role: "Viewer" },
+      { ext: "m2ts", name: "MPEG-TS Video", mimeType: "video/mp2t",        role: "Viewer" },
+      { ext: "mts",  name: "MPEG-TS Video", mimeType: "video/mp2t",        role: "Viewer" }
     ]
   },
 

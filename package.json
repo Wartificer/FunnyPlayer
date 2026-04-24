@@ -2,6 +2,13 @@
   "name": "funnyplayer",
   "version": "1.0.0",
   "description": "Video player with funscript support",
+  "author": "Wartificer",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/wartificer/FunnyPlayer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wartificer/FunnyPlayer.git"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

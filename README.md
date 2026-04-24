@@ -9,7 +9,8 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/platform-Windows-blue" alt="Platform" />
+  <!-- <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue" alt="Platform" /> -->
   <img src="https://img.shields.io/badge/license-GPLv3-green" alt="License" />
   <img src="https://img.shields.io/badge/electron-33-47848f" alt="Electron" />
 </p>
@@ -62,7 +63,7 @@ FunnyPlayer is built around FunScript support, but works perfectly as a standalo
 
 ### Platform
 - **Windows**: NSIS installer and portable `.exe`
-- **Linux**: AppImage and `.deb`
+<!-- - **Linux**: AppImage and `.deb` -->
 - File association support — double-click any video file to open it directly in FunnyPlayer
 - Single-instance: opening a file while the app is running focuses the existing window and plays it
 
@@ -76,7 +77,7 @@ Download the latest release from the [Releases](https://github.com/wartificer/Fu
 |---|---|
 | Windows (installer) | `FunnyPlayer-x.x.x-setup.exe` |
 | Windows (portable) | `FunnyPlayer-x.x.x-portable.exe` |
-| Linux | `FunnyPlayer-x.x.x.AppImage` or `.deb` |
+<!-- | Linux | `FunnyPlayer-x.x.x.AppImage` or `.deb` | -->
 
 ---
 
