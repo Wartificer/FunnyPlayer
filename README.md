@@ -14,6 +14,8 @@
   <img src="https://img.shields.io/badge/license-GPLv3-green" alt="License" />
   <img src="https://img.shields.io/badge/electron-33-47848f" alt="Electron" />
 </p>
+<img width="1536" height="824" alt="image" src="https://github.com/user-attachments/assets/9612967c-9a2c-4936-9964-7bea0a6f0e7d" />
+
 
 ---
 > - **Quality of life** — Click to play, go back, start another video in under a second. Designed with a modern UX to stay out of your way.
