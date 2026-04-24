@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore, loadProfile } from '../../store/app-store'
+import { ModalHeader } from '../shared/ModalHeader'
 
 function CreateProfileModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('')
@@ -27,11 +28,11 @@ function CreateProfileModal({ onClose }: { onClose: () => void }) {
     >
       <div onClick={(e) => e.stopPropagation()} style={{
         background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-        borderRadius: 8, padding: 24, width: '100%', height: '100%',
-        maxWidth: 400, maxHeight: 300, overflowY: 'auto'
+        borderRadius: 8, width: '100%', height: '100%',
+        maxWidth: 400, maxHeight: 300, display: 'flex', flexDirection: 'column', overflow: 'hidden'
       }}>
-        <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>New Profile</h3>
-
+        <ModalHeader title="New Profile" onClose={onClose} />
+        <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
         <input
           value={name}
           onChange={(e) => { setName(e.target.value); setError('') }}
@@ -57,8 +58,8 @@ function CreateProfileModal({ onClose }: { onClose: () => void }) {
         {error && <div style={{ color: 'var(--accent)', fontSize: 12, marginBottom: 8 }}>{error}</div>}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={onClose} style={{ background: 'transparent', border: '1px solid var(--border)' }}>Cancel</button>
           <button onClick={handleCreate}>Create</button>
+        </div>
         </div>
       </div>
     </div>
@@ -109,11 +110,11 @@ function ManageProfilesModal() {
       >
         <div onClick={(e) => e.stopPropagation()} style={{
           background: 'var(--bg-secondary)', border: '1px solid var(--border)',
-          borderRadius: 8, padding: 24, width: '100%', height: '100%',
-          maxWidth: 800, maxHeight: 700, overflowY: 'auto'
+          borderRadius: 8, width: '100%', height: '100%',
+          maxWidth: 800, maxHeight: 700, display: 'flex', flexDirection: 'column', overflow: 'hidden'
         }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Manage Profiles</h3>
-
+          <ModalHeader title="Manage Profiles" onClose={() => setProfileModal('none')} />
+          <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 16, maxHeight: 300, overflow: 'auto' }}>
             {profiles.map((p) => (
               <div key={p.name} style={{
@@ -165,11 +166,9 @@ function ManageProfilesModal() {
             ))}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
             <button onClick={() => setShowCreate(true)}>New Profile</button>
-            <button onClick={() => setProfileModal('none')} style={{ background: 'transparent', border: '1px solid var(--border)' }}>
-              Close
-            </button>
+          </div>
           </div>
         </div>
       </div>

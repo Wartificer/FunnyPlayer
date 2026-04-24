@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useHandyStore } from '../../store/handy-store'
+import { ModalHeader } from '../shared/ModalHeader'
 
 export function HandySettings() {
   const { connectionKey, setConnectionKey, connected, setConnected, setShowSettings, status, setStatus } = useHandyStore()
@@ -57,16 +58,17 @@ export function HandySettings() {
           background: 'var(--bg-secondary)',
           border: '1px solid var(--border)',
           borderRadius: 8,
-          padding: 24,
           width: '100%',
           height: '100%',
           maxWidth: 400,
           maxHeight: 300,
-          overflowY: 'auto'
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
         }}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Handy Connection</h3>
-
+        <ModalHeader title="Connection Settings" onClose={() => setShowSettings(false)} />
+        <div style={{ padding: 24, overflowY: 'auto', flex: 1 }}>
         <div style={{ marginBottom: 12 }}>
           <label style={{ display: 'block', fontSize: 13, marginBottom: 4, color: 'var(--text-secondary)' }}>
             Connection Key
@@ -90,6 +92,7 @@ export function HandySettings() {
           <span style={{ fontSize: 12, color: statusColor }}>
             {statusLabel}
           </span>
+        </div>
         </div>
       </div>
     </div>

@@ -80,6 +80,8 @@ interface AppStore {
   // Modals
   showSettingsModal: boolean
   setShowSettingsModal: (val: boolean) => void
+  showAboutModal: boolean
+  setShowAboutModal: (val: boolean) => void
   profileModal: ProfileModal
   setProfileModal: (val: ProfileModal) => void
 
@@ -202,6 +204,8 @@ export const useAppStore = create<AppStore>((set) => ({
   // Modals
   showSettingsModal: false,
   setShowSettingsModal: (val) => set({ showSettingsModal: val }),
+  showAboutModal: false,
+  setShowAboutModal: (val) => set({ showAboutModal: val }),
   profileModal: 'none',
   setProfileModal: (val) => set({ profileModal: val }),
 

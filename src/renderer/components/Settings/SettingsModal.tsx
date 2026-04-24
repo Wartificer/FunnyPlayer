@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAppStore, SubtitleStyle, defaultSubtitleStyle } from '../../store/app-store'
 import { COMMON_LANGUAGES, ALL_LANGUAGES_SORTED } from '../../constants/languages'
+import { ModalHeader } from '../shared/ModalHeader'
 
 const THEMES = [
   { value: 'dark' as const, label: 'Dark' },
@@ -325,6 +326,7 @@ export function SettingsModal() {
           border: '1px solid var(--border)',
           borderRadius: 8,
           display: 'flex',
+          flexDirection: 'column',
           width: '100%',
           height: '100%',
           maxWidth: 800,
@@ -332,50 +334,47 @@ export function SettingsModal() {
           overflow: 'hidden'
         }}
       >
-        {/* Vertical tab bar */}
-        <div style={{
-          width: 160,
-          background: 'var(--bg-primary)',
-          borderRight: '1px solid var(--border)',
-          padding: '16px 0',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          flexShrink: 0
-        }}>
-          <h3 style={{ margin: '0 0 12px 16px', fontSize: 16 }}>Settings</h3>
-          {TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              style={{
-                display: 'block',
-                width: '100%',
-                textAlign: 'left',
-                padding: '8px 16px',
-                fontSize: 13,
-                background: activeTab === tab.key ? 'var(--bg-tertiary)' : 'transparent',
-                color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-                border: 'none',
-                borderLeft: activeTab === tab.key ? '3px solid var(--accent)' : '3px solid transparent',
-                cursor: 'pointer'
-              }}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <ModalHeader title="Settings" onClose={() => setShowSettingsModal(false)} />
 
-        {/* Tab content */}
-        <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
-          {activeTab === 'general' && <GeneralTab />}
-          {activeTab === 'playback' && <PlaybackTab />}
-          {activeTab === 'subtitle-format' && <SubtitleFormatTab />}
+        <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+          {/* Vertical tab bar */}
+          <div style={{
+            width: 160,
+            background: 'var(--bg-primary)',
+            borderRight: '1px solid var(--border)',
+            padding: '16px 0',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            flexShrink: 0
+          }}>
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 16px',
+                  fontSize: 13,
+                  background: activeTab === tab.key ? 'var(--bg-tertiary)' : 'transparent',
+                  color: activeTab === tab.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  border: 'none',
+                  borderLeft: activeTab === tab.key ? '3px solid var(--accent)' : '3px solid transparent',
+                  cursor: 'pointer'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
-            <button onClick={() => setShowSettingsModal(false)} style={{ padding: '6px 16px' }}>
-              Close
-            </button>
+          {/* Tab content */}
+          <div style={{ flex: 1, padding: 24, overflowY: 'auto' }}>
+            {activeTab === 'general' && <GeneralTab />}
+            {activeTab === 'playback' && <PlaybackTab />}
+            {activeTab === 'subtitle-format' && <SubtitleFormatTab />}
           </div>
         </div>
       </div>

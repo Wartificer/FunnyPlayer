@@ -106,6 +106,7 @@ export function MenuBar() {
   const currentProfile = useAppStore((s) => s.currentProfile)
   const profiles = useAppStore((s) => s.profiles)
   const setShowSettingsModal = useAppStore((s) => s.setShowSettingsModal)
+  const setShowAboutModal = useAppStore((s) => s.setShowAboutModal)
   const setProfileModal = useAppStore((s) => s.setProfileModal)
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export function MenuBar() {
     boxShadow: '0 4px 16px rgba(0,0,0,0.3)'
   }
 
-  const menuNames = funscriptEnabled ? ['File', 'Edit', 'Handy'] : ['File', 'Edit']
+  const menuNames = funscriptEnabled ? ['File', 'Edit', 'Handy', 'Help'] : ['File', 'Edit', 'Help']
 
   const renderTrigger = (name: string, content: React.ReactNode) => {
     const isOpen = openMenu === name
@@ -204,6 +205,13 @@ export function MenuBar() {
                 onClick={() => { useHandyStore.getState().setShowSettings(true); setOpenMenu(null) }}
               />
             )}
+
+            {name === 'Help' && (
+              <MenuItemRow
+                label="About"
+                onClick={() => { setShowAboutModal(true); setOpenMenu(null) }}
+              />
+            )}
           </div>
         )}
       </div>
@@ -224,6 +232,7 @@ export function MenuBar() {
           Handy
         </>
       ))}
+      {renderTrigger('Help', 'Help')}
     </div>
   )
 }

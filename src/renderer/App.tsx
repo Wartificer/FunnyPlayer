@@ -10,6 +10,7 @@ import { PlayerScreen } from './components/Player/PlayerScreen'
 import { HandySettings } from './components/Settings/HandySettings'
 import { SettingsModal } from './components/Settings/SettingsModal'
 import { ProfileModals } from './components/Profiles/ProfileModals'
+import { AboutModal } from './components/Help/AboutModal'
 
 async function openFileForPlayback(filePath: string): Promise<void> {
   // Create mpv before switching the view so MpvCanvas (which mounts as a child
@@ -47,6 +48,7 @@ export default function App() {
   const setIsFullscreen = useAppStore((s) => s.setIsFullscreen)
   const showHandySettings = useHandyStore((s) => s.showSettings)
   const showSettingsModal = useAppStore((s) => s.showSettingsModal)
+  const showAboutModal = useAppStore((s) => s.showAboutModal)
   const profileModal = useAppStore((s) => s.profileModal)
   const funscriptEnabled = useAppStore((s) => s.funscriptEnabled)
   const theme = useAppStore((s) => s.theme)
@@ -132,6 +134,7 @@ export default function App() {
       {funscriptEnabled && showHandySettings && <HandySettings />}
       {showSettingsModal && <SettingsModal />}
       {profileModal !== 'none' && <ProfileModals />}
+      {showAboutModal && <AboutModal />}
     </>
   )
 }
