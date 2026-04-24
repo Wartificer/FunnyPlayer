@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useAppStore, SubtitleStyle } from '../../store/app-store'
 import { usePlayerStore } from '../../store/player-store'
-import { createMpv, destroyMpv, getMpv } from '../../mpv'
+import { createMpv, getMpv } from '../../mpv'
 import { MpvCanvas } from './MpvCanvas'
 import { Controls } from './Controls'
 import { PlaylistIndicator } from './PlaylistIndicator'
@@ -266,12 +266,8 @@ export function PlayerScreen() {
       console.error('[PlayerScreen] Failed to create mpv')
       return
     }
-
-    mpv.observeProperty('pause', 'bool')
-    mpv.observeProperty('time-pos', 'double')
-    mpv.observeProperty('duration', 'double')
-    mpv.setPropertyDouble('volume', volume)
-    applySubtitleStyle(useAppStore.getState().subtitleStyle)
+    // Volume and subtitle style are kept in sync by dedicated effects below,
+    // so no initial set is needed here. Observers are registered inside createMpv.
 
     eventTimerRef.current = setInterval(() => {
       const m = getMpv()
@@ -288,7 +284,11 @@ export function PlayerScreen() {
             usePlayerStore.getState().setDuration(evt.data)
           }
         } else if (evt.type === 'end-file') {
-          if (!switchingRef.current) {
+          // Always clear the switching flag so the player never gets stuck.
+          // Only advance the playlist if we weren't in the middle of switching tracks.
+          const wasSwitching = switchingRef.current
+          switchingRef.current = false
+          if (!wasSwitching) {
             handleEndFile()
           }
         } else if (evt.type === 'file-loaded') {
@@ -323,9 +323,11 @@ export function PlayerScreen() {
       }
     }, 16)
 
+    // On unmount: stop the event loop but keep the mpv instance alive.
+    // Destroying and recreating the native addon on every player open is unreliable;
+    // keeping it alive lets subsequent loadfile calls always work.
     return () => {
       if (eventTimerRef.current) clearInterval(eventTimerRef.current)
-      destroyMpv()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -376,6 +378,9 @@ export function PlayerScreen() {
     mpv.setPropertyString('loop-file', playlistMode ? 'no' : 'inf')
 
     mpv.command('loadfile', currentVideo.path)
+    // Explicit unpause — mpv defaults to playing on loadfile, but a prior
+    // session may have left pause=true. Guarantees autoplay on every load.
+    mpv.setPropertyBool('pause', false)
 
     usePlayerStore.getState().setSpriteSheet(null)
     window.api.generateSpriteSheet(currentVideo.path).then((info) => {

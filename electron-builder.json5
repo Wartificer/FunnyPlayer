@@ -3,9 +3,15 @@
   productName: "FunnyPlayer",
   copyright: "Copyright © 2025",
 
+  // Overrides the description used by electron-builder's rcedit pass,
+  // which stamps FileDescription on the .exe — shown in Task Manager and
+  // the Windows "Open With" menu. Leaves package.json itself untouched.
+  extraMetadata: {
+    description: "FunnyPlayer"
+  },
+
   // No code signing certificate — skip signing entirely
   forceCodeSigning: false,
-  win: { sign: null },
 
   directories: {
     buildResources: "build",
@@ -15,7 +21,10 @@
   // JS output from electron-vite; node_modules for production deps are added automatically
   files: [
     "out/**/*",
-    "!out/**/*.map"
+    "!out/**/*.map",
+    // ffprobe-static ships binaries for all 3 platforms; exclude the ones not needed on Windows
+    "!**/node_modules/ffprobe-static/bin/darwin/**",
+    "!**/node_modules/ffprobe-static/bin/linux/**"
   ],
 
   // Binaries that can't be executed from inside an asar archive
@@ -25,18 +34,23 @@
   ],
 
   // mpv_player.node → resources/mpv_player.node (accessed via process.resourcesPath)
+  // icon.ico → resources/icon.ico (used for BrowserWindow taskbar icon)
+  // libmpv-2.dll must sit next to mpv_player.node: Node's dlopen uses
+  // LOAD_WITH_ALTERED_SEARCH_PATH on Windows, which makes Windows resolve
+  // dependent DLLs from the .node's own directory — NOT from the main exe
+  // directory. Putting it under extraFiles (next to the exe) only worked
+  // incidentally when cwd happened to coincide with the install dir; it
+  // broke file-association launches where cwd is the opened file's folder.
   extraResources: [
-    { from: "native/build/Release/mpv_player.node", to: "mpv_player.node" }
-  ],
-
-  // libmpv DLL lives next to the app executable so Windows can find it
-  extraFiles: [
+    { from: "native/build/Release/mpv_player.node", to: "mpv_player.node" },
+    { from: "build/icon.ico", to: "icon.ico" },
     { from: "libmpv-2.dll", to: "libmpv-2.dll" }
   ],
 
   // ──────────────── Windows ────────────────
   win: {
     icon: "build/icon.ico",
+    sign: null,
     target: [
       { target: "nsis",     arch: ["x64"] },
       { target: "portable", arch: ["x64"] }
@@ -55,6 +69,7 @@
 
   nsis: {
     oneClick: false,
+    perMachine: true,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,

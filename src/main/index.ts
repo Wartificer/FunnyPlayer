@@ -4,6 +4,11 @@ import fs from 'fs'
 import { registerIpcHandlers, cleanup } from './ipc-handlers'
 import { settingsStore } from './settings-store'
 
+// Must be called before app.whenReady() — sets the app identity used by Windows
+// for taskbar grouping, "Open With" label, and jump lists
+app.setAppUserModelId('com.funnyplayer.app')
+app.setName('FunnyPlayer')
+
 let mainWindow: BrowserWindow | null = null
 
 // Video extensions we handle via file association
@@ -11,7 +16,9 @@ const VIDEO_EXTS = /\.(mp4|mkv|avi|mov|wmv|flv|webm|m4v|ts|mpg|mpeg|m2ts|mts|div
 
 function extractVideoArg(args: string[]): string | null {
   // Skip the first arg (app executable path) and Electron flags
-  for (const arg of args.slice(1)) {
+  for (let arg of args.slice(1)) {
+    // Windows sometimes wraps paths in double quotes
+    if (arg.startsWith('"') && arg.endsWith('"')) arg = arg.slice(1, -1)
     if (!arg.startsWith('-') && VIDEO_EXTS.test(arg)) {
       try { fs.accessSync(arg); return arg } catch {}
     }
@@ -57,6 +64,10 @@ function createWindow(): void {
     minHeight: 600,
     backgroundColor: '#1a1a2e',
     frame: false,
+    // Icon for taskbar / task manager (resolves correctly in both dev and packaged)
+    icon: app.isPackaged
+      ? path.join(process.resourcesPath, 'icon.ico')
+      : path.join(__dirname, '../../build/icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: false,

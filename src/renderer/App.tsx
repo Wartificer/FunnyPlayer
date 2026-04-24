@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAppStore, loadProfile } from './store/app-store'
 import { usePlayerStore } from './store/player-store'
 import { useHandyStore } from './store/handy-store'
+import { createMpv } from './mpv'
 import type { VideoFile } from '../shared/types'
 import { Topbar } from './components/Topbar/Topbar'
 import { OrganizerScreen } from './components/Organizer/OrganizerScreen'
@@ -11,17 +12,25 @@ import { SettingsModal } from './components/Settings/SettingsModal'
 import { ProfileModals } from './components/Profiles/ProfileModals'
 
 async function openFileForPlayback(filePath: string): Promise<void> {
-  const result = await window.api.prepareVideo(filePath) as { filePath: string; funscriptPath: string | null }
+  // Create mpv before switching the view so MpvCanvas (which mounts as a child
+  // of PlayerScreen) has a valid instance in its first effect — React runs
+  // child effects before parent effects, so without this the canvas render
+  // loop never starts on cold launches with a file argument.
+  createMpv()
+
   const name = filePath.replace(/.*[\\/]/, '').replace(/\.[^.]+$/, '')
   const folder = filePath.replace(/[\\/][^\\/]+$/, '')
+  // Don't call prepareVideo here — PlayerScreen calls it when the video loads,
+  // which handles Handy sync and adding to Recent. Calling it here too would
+  // race with PlayerScreen's own call and double-trigger the Handy API.
   const video: VideoFile = {
     path: filePath,
     name,
     folder,
     size: 0,
     lastModified: 0,
-    hasFunscript: result.funscriptPath != null,
-    funscriptPath: result.funscriptPath ?? null,
+    hasFunscript: false,
+    funscriptPath: null,
     alternateScripts: []
   }
   const store = usePlayerStore.getState()
@@ -41,6 +50,10 @@ export default function App() {
   const profileModal = useAppStore((s) => s.profileModal)
   const funscriptEnabled = useAppStore((s) => s.funscriptEnabled)
   const theme = useAppStore((s) => s.theme)
+
+  // Gate first paint on init completing — otherwise the organizer flashes for
+  // a few frames on cold launches that should open straight into the player.
+  const [initialized, setInitialized] = useState(false)
 
   const hideTopbar = isFullscreen
 
@@ -70,9 +83,12 @@ export default function App() {
   // Init: load profile, auto-connect Handy, restore volume, handle open-file
   useEffect(() => {
     loadProfile().then(async () => {
-      // Check if app was launched with a file (double-click / file association)
+      // Check if app was launched with a file (double-click / file association).
+      // Must happen BEFORE setInitialized so the first render already has
+      // view='player' — avoids the organizer flashing for a few frames.
       const pendingFile = await window.api.getPendingOpenFile()
       if (pendingFile) openFileForPlayback(pendingFile)
+      setInitialized(true)
 
       const fsEnabled = useAppStore.getState().funscriptEnabled
       if (fsEnabled) {
@@ -101,6 +117,10 @@ export default function App() {
     })
     return () => { unsubOpenFile() }
   }, [])
+
+  // Background matches window backgroundColor (#1a1a2e) so the pre-init frame
+  // is indistinguishable from an app that finished loading.
+  if (!initialized) return null
 
   return (
     <>

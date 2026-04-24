@@ -1,0 +1,2 @@
+[19176:0424/163318.844:ERROR:network_change_notifier_win.cc(188)] WSALookupServiceBegin failed with: 10108
+[19176:0424/163318.859:ERROR:core_audio_util_win.cc(353)] Failed to create Core Audio device enumerator on thread with ID 15464

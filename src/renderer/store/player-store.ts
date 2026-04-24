@@ -61,5 +61,5 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   playlistMode: null,
   setPlaylist: (videos, mode) => set({ playlist: videos, playlistMode: mode, playlistIndex: 0 }),
   setPlaylistIndex: (index) => set({ playlistIndex: index }),
-  clearPlaylist: () => set({ playlist: [], playlistIndex: 0, playlistMode: null })
+  clearPlaylist: () => set({ playlist: [], playlistIndex: 0, playlistMode: null, currentVideo: null })
 }))

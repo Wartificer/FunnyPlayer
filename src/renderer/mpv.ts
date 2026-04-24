@@ -16,17 +16,19 @@ function loadNativeAddon() {
     path.join(__dirname, 'mpv_player.node'),
   ]
 
+  const errors: Array<{ path: string; message: string }> = []
   for (const p of possiblePaths) {
     try {
       const mod = nativeRequire(p)
       console.log(`[mpv] Loaded native addon from: ${p}`)
       return mod
-    } catch {
-      // try next
+    } catch (err) {
+      errors.push({ path: p, message: (err as Error).message })
     }
   }
 
-  console.error('[mpv] Failed to load native addon from any path:', possiblePaths)
+  console.error('[mpv] Failed to load native addon. Attempts:')
+  for (const e of errors) console.error(`  - ${e.path}\n    → ${e.message}`)
   return null
 }
 
@@ -62,6 +64,12 @@ export function createMpv(): MpvPlayerNative | null {
   try {
     const player = new native.MpvPlayer()
     player.create()
+    // Observers belong to the instance lifecycle, not the PlayerScreen mount —
+    // setting them here guarantees they're registered exactly once regardless
+    // of who triggers creation first (App init, PlayerScreen, etc.).
+    player.observeProperty('pause', 'bool')
+    player.observeProperty('time-pos', 'double')
+    player.observeProperty('duration', 'double')
     mpvInstance = player
     console.log('[mpv] Instance created')
     return player
