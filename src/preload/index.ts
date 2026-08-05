@@ -1,4 +1,5 @@
 import { ipcRenderer } from 'electron'
+import type { HandyPreferences } from '../shared/types'
 
 // With contextIsolation: false, we can attach directly to window
 // Keep the same api shape for backward compat
@@ -86,6 +87,12 @@ const api = {
   handyConnect: (key: string) => ipcRenderer.invoke('handy-connect', key),
   handyDisconnect: () => ipcRenderer.invoke('handy-disconnect'),
   handyGetKey: () => ipcRenderer.invoke('handy-get-key'),
+
+  // Handy device preferences
+  handyGetPreferences: () => ipcRenderer.invoke('handy-get-preferences') as Promise<HandyPreferences>,
+  handySetPreferences: (prefs: Partial<HandyPreferences>) =>
+    ipcRenderer.invoke('handy-set-preferences', prefs) as Promise<{ preferences: HandyPreferences; resync: boolean }>,
+
   onHandyStatus: (callback: (status: unknown) => void) => {
     const handler = (_: unknown, status: unknown) => callback(status)
     ipcRenderer.on('handy-status', handler)

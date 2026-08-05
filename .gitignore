@@ -6,3 +6,4 @@ resources/mpv/*
 deps/mpv/lib/libmpv-2.dll
 libmpv-2.dll
 release
+.coden

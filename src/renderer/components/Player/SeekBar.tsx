@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { usePlayerStore } from '../../store/player-store'
+import { useAppStore } from '../../store/app-store'
 import { getMpv } from '../../mpv'
 
 function formatTime(seconds: number): string {
@@ -27,7 +28,9 @@ export function SeekBar() {
     const fraction = (e.clientX - rect.left) / rect.width
     const seekTo = fraction * duration
     mpv.setPropertyDouble('time-pos', seekTo)
-    window.api.handyOnSeek(seekTo * 1000)
+    if (useAppStore.getState().funscriptEnabled) {
+      window.api.handyOnSeek(seekTo * 1000)
+    }
   }
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {

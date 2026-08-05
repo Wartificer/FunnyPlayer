@@ -2,10 +2,16 @@ import { ipcMain, dialog, BrowserWindow, app, shell } from 'electron'
 import fs from 'fs'
 import pathMod from 'path'
 import { scanFolder } from './scanner/folder-scanner'
-import { matchFunscript, matchAllFunscripts, buildFolderTree } from './scanner/funscript-matcher'
+import { matchAllFunscripts, buildFolderTree } from './scanner/funscript-matcher'
 import { SyncManager } from './handy/sync-manager'
-import { settingsStore, getCurrentProfileData, updateCurrentProfile } from './settings-store'
-import type { SubtitleStyle } from './settings-store'
+import {
+  settingsStore,
+  getCurrentProfileData,
+  updateCurrentProfile,
+  getHandyPreferences,
+  setHandyPreferences
+} from './settings-store'
+import type { SubtitleStyle, HandyPreferences } from './settings-store'
 import { extractSubtitle } from './ffmpeg/video-processor'
 import { getVideoThumbnail, generateSpriteSheet, setVideoThumbnail, getVideoDuration } from './ffmpeg/thumbnail-generator'
 import type { VideoFile } from '../shared/types'
@@ -411,17 +417,29 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     recent.unshift(filePath)
     updateCurrentProfile({ recentVideos: recent.slice(0, 50) })
 
-    // Use override if provided, otherwise auto-match
-    const funscriptPath = scriptOverride ?? matchFunscript(filePath)
+    // Use override if provided, otherwise auto-match. Fall back to the first
+    // variant when there's no exact-name script — the library already counts a
+    // video as scripted on variants alone, so plain Play should honour that
+    // rather than silently starting with no script.
+    const match = matchAllFunscripts(filePath)
+    const funscriptPath = scriptOverride ?? match.defaultScript ?? match.variants[0]?.path ?? null
     console.log(`[IPC] Funscript match: ${funscriptPath ?? 'none'}, handy connected: ${syncManager.getConnected()}`)
-    if (funscriptPath && syncManager.getConnected()) {
-      mainWindow.webContents.send('handy-script-loading', true)
-      try {
-        await syncManager.setupScript(funscriptPath)
+
+    if (syncManager.getConnected()) {
+      if (funscriptPath) {
+        mainWindow.webContents.send('handy-script-loading', true)
+        try {
+          await syncManager.setupScript(funscriptPath)
+        } catch (err) {
+          console.error('[IPC] Handy setup error:', err)
+        }
         mainWindow.webContents.send('handy-script-loading', false)
-      } catch (err) {
-        console.error('[IPC] Handy setup error:', err)
-        mainWindow.webContents.send('handy-script-loading', false)
+      } else {
+        // Must be explicit: leaving the device alone here would let the previous
+        // video's script keep running against this one.
+        await syncManager.clearScript().catch((err) => {
+          console.error('[IPC] Handy clear error:', err)
+        })
       }
     }
 
@@ -477,6 +495,28 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('handy-get-key', () => {
     return settingsStore.get('handyConnectionKey')
+  })
+
+  // --- Handy device preferences ---
+  ipcMain.handle('handy-get-preferences', () => {
+    return getHandyPreferences()
+  })
+
+  /**
+   * Persist the preference and rebuild the loaded script under it. Returns the
+   * sanitised preference plus whether playback needs resyncing — the renderer
+   * owns the playhead, so only it can issue the follow-up seek.
+   */
+  ipcMain.handle('handy-set-preferences', async (_e, prefs: Partial<HandyPreferences>) => {
+    const saved = setHandyPreferences(prefs)
+    console.log(`[IPC] handy-set-preferences: ${saved.rangeMin}-${saved.rangeMax} (${saved.rangeMode})`)
+    let resync = false
+    try {
+      resync = await syncManager.reloadScript()
+    } catch (err) {
+      console.error('[IPC] Handy script reload error:', err)
+    }
+    return { preferences: saved, resync }
   })
 
   // --- Settings ---

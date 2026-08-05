@@ -1,4 +1,9 @@
 import Store from 'electron-store'
+import { defaultHandyPreferences } from '../shared/types'
+import type { HandyPreferences } from '../shared/types'
+
+export { defaultHandyPreferences }
+export type { HandyPreferences, HandyRangeMode } from '../shared/types'
 
 export interface SubtitleStyle {
   size: number           // percent (50-150, default 100)
@@ -39,6 +44,7 @@ interface SettingsSchema {
   currentProfile: string
   profiles: Record<string, ProfileData>
   handyConnectionKey: string
+  handyPreferences: HandyPreferences
   volume: number
   windowBounds: { width: number; height: number; x?: number; y?: number }
 }
@@ -62,6 +68,7 @@ const defaults: SettingsSchema = {
     }
   },
   handyConnectionKey: '',
+  handyPreferences: defaultHandyPreferences,
   volume: 100,
   windowBounds: { width: 1280, height: 800 }
 }
@@ -110,4 +117,33 @@ export function updateCurrentProfile(partial: Partial<ProfileData>): void {
   const profiles = settingsStore.get('profiles')
   profiles[name] = { ...profiles[name], ...partial }
   settingsStore.set('profiles', profiles)
+}
+
+/**
+ * Clamp a stored/incoming range into something the script transform can trust:
+ * whole numbers, inside 0-100, min never above max. Sanitising on the way in
+ * means every consumer can treat the bounds as already valid.
+ */
+function sanitizeHandyPreferences(partial: Partial<HandyPreferences> | undefined): HandyPreferences {
+  const merged = { ...defaultHandyPreferences, ...(partial ?? {}) }
+  const clamp = (n: number, fallback: number): number =>
+    Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : fallback
+  let rangeMin = clamp(merged.rangeMin, defaultHandyPreferences.rangeMin)
+  let rangeMax = clamp(merged.rangeMax, defaultHandyPreferences.rangeMax)
+  if (rangeMin > rangeMax) [rangeMin, rangeMax] = [rangeMax, rangeMin]
+  return {
+    rangeMin,
+    rangeMax,
+    rangeMode: merged.rangeMode === 'scale' ? 'scale' : 'limit'
+  }
+}
+
+export function getHandyPreferences(): HandyPreferences {
+  return sanitizeHandyPreferences(settingsStore.get('handyPreferences'))
+}
+
+export function setHandyPreferences(prefs: Partial<HandyPreferences>): HandyPreferences {
+  const next = sanitizeHandyPreferences({ ...getHandyPreferences(), ...prefs })
+  settingsStore.set('handyPreferences', next)
+  return next
 }

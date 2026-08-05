@@ -112,13 +112,14 @@ export function MpvCanvas({ width, height }: { width: number; height: number }) 
 
       gl.viewport(0, 0, canvas.width, canvas.height)
       gl.bindTexture(gl.TEXTURE_2D, texRef.current)
-      // Copy frame data - native addon returns external buffer that WebGL can't use directly
-      const frameCopy = new Uint8Array(frame)
+      // renderFrame() already hands back a freshly allocated ArrayBuffer that
+      // WebGL can upload directly — copying it again here would duplicate a
+      // full frame (~8MB at 1080p) on every single rAF.
       gl.texImage2D(
         gl.TEXTURE_2D, 0, gl.RGBA,
         width, height, 0,
         gl.RGBA, gl.UNSIGNED_BYTE,
-        frameCopy
+        frame
       )
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     }

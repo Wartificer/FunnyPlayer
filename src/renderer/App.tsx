@@ -8,6 +8,7 @@ import { Topbar } from './components/Topbar/Topbar'
 import { OrganizerScreen } from './components/Organizer/OrganizerScreen'
 import { PlayerScreen } from './components/Player/PlayerScreen'
 import { HandySettings } from './components/Settings/HandySettings'
+import { HandyPreferences } from './components/Settings/HandyPreferences'
 import { SettingsModal } from './components/Settings/SettingsModal'
 import { ProfileModals } from './components/Profiles/ProfileModals'
 import { AboutModal } from './components/Help/AboutModal'
@@ -47,6 +48,7 @@ export default function App() {
   const isFullscreen = useAppStore((s) => s.isFullscreen)
   const setIsFullscreen = useAppStore((s) => s.setIsFullscreen)
   const showHandySettings = useHandyStore((s) => s.showSettings)
+  const showHandyPreferences = useHandyStore((s) => s.showPreferences)
   const showSettingsModal = useAppStore((s) => s.showSettingsModal)
   const showAboutModal = useAppStore((s) => s.showAboutModal)
   const profileModal = useAppStore((s) => s.profileModal)
@@ -94,6 +96,9 @@ export default function App() {
 
       const fsEnabled = useAppStore.getState().funscriptEnabled
       if (fsEnabled) {
+        window.api.handyGetPreferences().then((prefs) => {
+          useHandyStore.getState().setPreferences(prefs)
+        }).catch(() => {})
         window.api.handyGetKey().then((key: string) => {
           if (key) {
             const store = useHandyStore.getState()
@@ -132,6 +137,7 @@ export default function App() {
         {view === 'player' && <PlayerScreen />}
       </div>
       {funscriptEnabled && showHandySettings && <HandySettings />}
+      {funscriptEnabled && showHandyPreferences && <HandyPreferences />}
       {showSettingsModal && <SettingsModal />}
       {profileModal !== 'none' && <ProfileModals />}
       {showAboutModal && <AboutModal />}

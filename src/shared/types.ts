@@ -32,6 +32,30 @@ export interface HandyStatus {
   state?: string
 }
 
+/**
+ * How the configured motion range is applied to a script.
+ *
+ * 'limit' — positions outside the range are pinned to the nearest bound. Motion
+ *   already inside the range is untouched, so strokes that stayed within it feel
+ *   exactly as scripted while the extremes flatten off.
+ * 'scale' — the script's own lowest and highest positions are mapped onto the
+ *   range bounds and everything between is interpolated, preserving the shape of
+ *   the whole script at reduced size.
+ */
+export type HandyRangeMode = 'limit' | 'scale'
+
+export interface HandyPreferences {
+  rangeMin: number // 0-100
+  rangeMax: number // 0-100
+  rangeMode: HandyRangeMode
+}
+
+export const defaultHandyPreferences: HandyPreferences = {
+  rangeMin: 0,
+  rangeMax: 100,
+  rangeMode: 'limit'
+}
+
 export interface PlaylistState {
   videos: VideoFile[]
   currentIndex: number

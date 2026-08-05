@@ -200,10 +200,16 @@ export function MenuBar() {
             )}
 
             {name === 'Handy' && (
-              <MenuItemRow
-                label="Connection Settings"
-                onClick={() => { useHandyStore.getState().setShowSettings(true); setOpenMenu(null) }}
-              />
+              <>
+                <MenuItemRow
+                  label="Connection Settings"
+                  onClick={() => { useHandyStore.getState().setShowSettings(true); setOpenMenu(null) }}
+                />
+                <MenuItemRow
+                  label="Preferences"
+                  onClick={() => { useHandyStore.getState().setShowPreferences(true); setOpenMenu(null) }}
+                />
+              </>
             )}
 
             {name === 'Help' && (

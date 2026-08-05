@@ -46,13 +46,6 @@ export function matchAllFunscripts(videoPath: string): FunscriptMatch {
   return { defaultScript, variants }
 }
 
-/** Simple check — kept for backward compat */
-export function matchFunscript(videoPath: string): string | null {
-  const base = videoPath.replace(/\.[^.]+$/, '')
-  const funscriptPath = base + '.funscript'
-  return fs.existsSync(funscriptPath) ? funscriptPath : null
-}
-
 interface FolderTreeNode {
   path: string
   name: string
