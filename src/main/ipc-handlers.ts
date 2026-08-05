@@ -497,6 +497,20 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     return settingsStore.get('handyConnectionKey')
   })
 
+  /**
+   * Re-time the loaded script for a new video playback rate.
+   *
+   * The renderer must not touch mpv's speed until this resolves: the device has
+   * no speed control, so the two only stay in sync if the video changes speed
+   * *after* the device is confirmed to hold the re-timed script. A rejection
+   * here therefore means "leave the video speed alone".
+   */
+  ipcMain.handle('handy-set-playback-rate', async (_e, rate: number) => {
+    console.log(`[IPC] handy-set-playback-rate: ${rate}x`)
+    const resync = await syncManager.setPlaybackRate(rate)
+    return { resync }
+  })
+
   // --- Handy device preferences ---
   ipcMain.handle('handy-get-preferences', () => {
     return getHandyPreferences()

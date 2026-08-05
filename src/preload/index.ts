@@ -82,6 +82,8 @@ const api = {
   handyOnPlay: (positionMs: number) => ipcRenderer.invoke('handy-on-play', positionMs),
   handyOnPause: () => ipcRenderer.invoke('handy-on-pause'),
   handyOnSeek: (positionMs: number) => ipcRenderer.invoke('handy-on-seek', positionMs),
+  handySetPlaybackRate: (rate: number) =>
+    ipcRenderer.invoke('handy-set-playback-rate', rate) as Promise<{ resync: boolean }>,
 
   // Handy connection
   handyConnect: (key: string) => ipcRenderer.invoke('handy-connect', key),

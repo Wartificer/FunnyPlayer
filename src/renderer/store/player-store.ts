@@ -26,6 +26,16 @@ interface PlayerStore {
   volume: number
   setVolume: (vol: number) => void
 
+  /** Rate the video is actually playing at — only moves once the device agrees. */
+  playbackRate: number
+  setPlaybackRate: (rate: number) => void
+  /** Rate the user has dialled in with +/-, still waiting to be committed. */
+  pendingPlaybackRate: number
+  setPendingPlaybackRate: (rate: number) => void
+  /** True while the script is being re-timed for a new rate. */
+  rateChanging: boolean
+  setRateChanging: (val: boolean) => void
+
   // Sprite sheet for seek preview
   spriteSheet: SpriteSheetInfo | null
   setSpriteSheet: (info: SpriteSheetInfo | null) => void
@@ -52,6 +62,13 @@ export const usePlayerStore = create<PlayerStore>((set) => ({
   setDuration: (dur) => set({ duration: dur }),
   volume: 100,
   setVolume: (vol) => set({ volume: vol }),
+
+  playbackRate: 1,
+  setPlaybackRate: (rate) => set({ playbackRate: rate }),
+  pendingPlaybackRate: 1,
+  setPendingPlaybackRate: (rate) => set({ pendingPlaybackRate: rate }),
+  rateChanging: false,
+  setRateChanging: (val) => set({ rateChanging: val }),
 
   spriteSheet: null,
   setSpriteSheet: (info) => set({ spriteSheet: info }),

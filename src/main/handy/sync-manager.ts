@@ -16,6 +16,15 @@ export class SyncManager extends EventEmitter {
   private currentScriptPath: string | null = null
 
   /**
+   * Video playback rate the script currently on the device was built for.
+   *
+   * Only ever updated once the device is actually holding a script re-timed for
+   * the new rate — until then every position conversion must keep using the old
+   * one, or a seek landing mid-change would be sent to the wrong script offset.
+   */
+  private playbackRate = 1
+
+  /**
    * Resolves once the device and server clocks have been synced for this
    * connection. Both syncs are slow (the device alone makes 30 round trips) and
    * only need doing once, so they run at connect time — long before the user
@@ -88,7 +97,18 @@ export class SyncManager extends EventEmitter {
     return this.clockSync
   }
 
-  async setupScript(funscriptPath: string): Promise<void> {
+  /**
+   * Video position -> offset into the script the device is holding.
+   *
+   * The script is time-compressed to match the playback rate, so a video at
+   * 2x reaches its 60s mark after 30s of script. Every hsspPlay start offset
+   * has to go through here.
+   */
+  private toScriptTime(videoPositionMs: number): number {
+    return videoPositionMs / this.playbackRate
+  }
+
+  async setupScript(funscriptPath: string, rate: number = this.playbackRate): Promise<void> {
     if (!this.isConnected) {
       console.log('[SyncManager] setupScript skipped - not connected')
       return
@@ -103,7 +123,7 @@ export class SyncManager extends EventEmitter {
     this.currentScriptPath = funscriptPath
 
     const prefs = getHandyPreferences()
-    const { csv, sha256 } = funscriptToCsv(funscriptPath, prefs)
+    const { csv, sha256 } = funscriptToCsv(funscriptPath, prefs, rate)
 
     // The device is already holding this exact script — replaying the same video
     // or switching back to one costs nothing.
@@ -113,7 +133,7 @@ export class SyncManager extends EventEmitter {
     }
 
     console.log(`[SyncManager] Setting up script: ${funscriptPath}`)
-    console.log(`[SyncManager] Motion range: ${prefs.rangeMin}-${prefs.rangeMax} (${prefs.rangeMode})`)
+    console.log(`[SyncManager] Motion range: ${prefs.rangeMin}-${prefs.rangeMax} (${prefs.rangeMode}), rate: ${rate}x`)
     console.log(`[SyncManager] CSV generated: ${csv.split('\n').length - 1} actions, sha256: ${sha256.slice(0, 12)}...`)
 
     if (this.isPlaying) {
@@ -199,6 +219,41 @@ export class SyncManager extends EventEmitter {
     return wasPlaying
   }
 
+  getPlaybackRate(): number {
+    return this.playbackRate
+  }
+
+  /**
+   * Re-time the loaded script for a new video playback rate.
+   *
+   * The device cannot change speed on its own, so the script has to be rebuilt
+   * and re-uploaded. `this.playbackRate` is deliberately updated *last*: until
+   * the device is confirmed to hold the re-timed script, every position
+   * conversion must keep using the rate the device is actually playing at.
+   * Should the setup throw, the rate stays put and the caller leaves the video
+   * speed alone too — both sides stay on the old rate rather than drifting apart.
+   *
+   * Returns whether playback needs resyncing afterwards; the caller must only
+   * change the video's speed once this has resolved.
+   */
+  async setPlaybackRate(rate: number): Promise<boolean> {
+    if (rate === this.playbackRate) return false
+
+    // Nothing on the device to keep in step with — adopt the rate directly so
+    // the next script built is already correct.
+    if (!this.isConnected || !this.currentScriptPath) {
+      console.log(`[SyncManager] Playback rate -> ${rate}x (no script loaded)`)
+      this.playbackRate = rate
+      return false
+    }
+
+    const wasPlaying = this.isPlaying
+    console.log(`[SyncManager] Re-timing script for ${rate}x playback`)
+    await this.setupScript(this.currentScriptPath, rate)
+    this.playbackRate = rate
+    return wasPlaying
+  }
+
   private async getScriptUrl(csv: string, sha256: string): Promise<string> {
     const cached = this.uploadCache.get(sha256)
     if (cached) {
@@ -224,7 +279,7 @@ export class SyncManager extends EventEmitter {
     // an in-flight sync, but never kick off a fresh one here — that would block
     // playback for seconds.
     if (this.clockSync && !this.client.hasServerTime()) await this.clockSync
-    await this.client.hsspPlay(positionMs)
+    await this.client.hsspPlay(this.toScriptTime(positionMs))
   }
 
   async onPause(): Promise<void> {
@@ -237,7 +292,7 @@ export class SyncManager extends EventEmitter {
   async onSeek(positionMs: number): Promise<void> {
     console.log(`[SyncManager] onSeek - position: ${positionMs.toFixed(0)}ms, connected: ${this.isConnected}, playing: ${this.isPlaying}`)
     if (!this.isConnected || !this.isPlaying) return
-    await this.client.hsspPlay(positionMs)
+    await this.client.hsspPlay(this.toScriptTime(positionMs))
   }
 
   getConnected(): boolean {

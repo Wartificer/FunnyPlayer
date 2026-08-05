@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { useAppStore, SubtitleStyle } from '../../store/app-store'
 import { usePlayerStore } from '../../store/player-store'
 import { createMpv, getMpv } from '../../mpv'
@@ -9,6 +9,7 @@ import { PlaylistIndicator } from './PlaylistIndicator'
 import { ScriptLoadingIndicator, useScriptLoadingStore } from './ScriptLoadingIndicator'
 import { ContextMenu } from './ContextMenu'
 import { useAutoHide } from '../../hooks/useAutoHide'
+import { usePlaybackRate, formatRate } from '../../hooks/usePlaybackRate'
 import { getTrackList } from '../../utils/mpv-tracks'
 import { matchesLanguage } from '../../constants/languages'
 
@@ -97,6 +98,70 @@ function VolumeOSD({ volume, visible }: { volume: number; visible: boolean }) {
           borderRadius: 10
         }} />
       </div>
+    </div>
+  )
+}
+
+/**
+ * Speed OSD — top-left, mirroring the volume OSD on the right.
+ *
+ * A rate change is deliberately not instant (the device's script has to be
+ * re-timed first), so this has to show the rate the user has dialled in right
+ * away, and say plainly that the video is still catching up.
+ */
+function SpeedOSD({
+  pendingRate,
+  appliedRate,
+  changing,
+  visible
+}: {
+  pendingRate: number
+  appliedRate: number
+  changing: boolean
+  visible: boolean
+}) {
+  if (!visible) return null
+  const settled = pendingRate === appliedRate && !changing
+
+  return (
+    <div style={{
+      position: 'absolute',
+      left: 30,
+      top: 30,
+      zIndex: 30,
+      pointerEvents: 'none',
+      background: 'rgba(0,0,0,0.6)',
+      borderRadius: 12,
+      padding: '12px 18px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 4
+    }}>
+      <span style={{
+        fontSize: 22,
+        fontWeight: 700,
+        color: '#fff',
+        textShadow: '0 1px 4px rgba(0,0,0,0.8)'
+      }}>
+        {formatRate(pendingRate)}
+      </span>
+      {!settled && (
+        <span style={{ fontSize: 11, color: '#ccc', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {changing && (
+            <span style={{
+              display: 'inline-block',
+              width: 9,
+              height: 9,
+              border: '2px solid rgba(255,255,255,0.3)',
+              borderTopColor: '#fff',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite'
+            }} />
+          )}
+          {changing ? 'Syncing device…' : `Playing at ${formatRate(appliedRate)}`}
+        </span>
+      )}
     </div>
   )
 }
@@ -196,6 +261,14 @@ export function PlayerScreen() {
   const volumeOsdTimerRef = useRef<ReturnType<typeof setTimeout>>()
   const prevVolumeRef = useRef(volume)
 
+  // Speed OSD — stays up while the rate is unsettled, then lingers briefly
+  const playbackRate = usePlayerStore((s) => s.playbackRate)
+  const pendingPlaybackRate = usePlayerStore((s) => s.pendingPlaybackRate)
+  const rateChanging = usePlayerStore((s) => s.rateChanging)
+  const { bumpRate, resetRate } = usePlaybackRate()
+  const [speedOsdVisible, setSpeedOsdVisible] = useState(false)
+  const speedOsdTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
   // Seek OSD
   const [seekOsdText, setSeekOsdText] = useState('')
   const [seekOsdVisible, setSeekOsdVisible] = useState(false)
@@ -225,6 +298,21 @@ export function PlayerScreen() {
     }
     return () => { if (volumeOsdTimerRef.current) clearTimeout(volumeOsdTimerRef.current) }
   }, [volume])
+
+  // Speed OSD visibility. The rate is "unsettled" from the first key press until
+  // the device has been re-timed and the video actually moved — the OSD has to
+  // stay up for that whole window, since the video looks unchanged meanwhile.
+  useEffect(() => {
+    const settled = pendingPlaybackRate === playbackRate && !rateChanging
+    if (!settled) {
+      if (speedOsdTimerRef.current) clearTimeout(speedOsdTimerRef.current)
+      setSpeedOsdVisible(true)
+      return
+    }
+    if (!speedOsdVisible) return
+    speedOsdTimerRef.current = setTimeout(() => setSpeedOsdVisible(false), 1500)
+    return () => { if (speedOsdTimerRef.current) clearTimeout(speedOsdTimerRef.current) }
+  }, [pendingPlaybackRate, playbackRate, rateChanging, speedOsdVisible])
 
   const switchingRef = useRef(false)
 
@@ -418,6 +506,15 @@ export function PlayerScreen() {
     if (mpv) mpv.setPropertyDouble('volume', volume)
   }, [volume])
 
+  // Sync speed. usePlaybackRate already sets this at commit time — this is the
+  // safety net for a fresh mpv instance, or a new video inheriting the rate.
+  // Never set it from the *pending* rate: the video must not move until the
+  // device has been re-timed.
+  useEffect(() => {
+    const mpv = getMpv()
+    if (mpv) mpv.setPropertyDouble('speed', playbackRate)
+  }, [playbackRate, currentVideo])
+
   const handleEndFile = useCallback(() => {
     const { playlist, playlistIndex, playlistMode, setPlaylistIndex, setCurrentVideo } = usePlayerStore.getState()
     if (playlistMode && playlist.length > 0) {
@@ -503,6 +600,13 @@ export function PlayerScreen() {
         usePlayerStore.getState().setVolume(vol)
         window.api.setVolume(vol)
         mpv.setPropertyDouble('volume', vol)
+      } else if (e.key === '+' || e.key === '=') {
+        // '=' is the unshifted plus key on most layouts; numpad reports '+'.
+        e.preventDefault()
+        bumpRate(1)
+      } else if (e.key === '-' || e.key === '_') {
+        e.preventDefault()
+        bumpRate(-1)
       }
     }
 
@@ -532,7 +636,7 @@ export function PlayerScreen() {
       window.removeEventListener('wheel', handleWheel)
       activeSeekKeysRef.current.clear()
     }
-  }, [goBack, toggleFullscreen, volume, showSeekOsd])
+  }, [goBack, toggleFullscreen, volume, showSeekOsd, bumpRate])
 
   return (
     <div
@@ -570,6 +674,12 @@ export function PlayerScreen() {
       <MpvCanvas width={canvasSize.width} height={canvasSize.height} />
       {funscriptEnabled && <ScriptLoadingIndicator />}
       <VolumeOSD volume={volume} visible={volumeOsdVisible} />
+      <SpeedOSD
+        pendingRate={pendingPlaybackRate}
+        appliedRate={playbackRate}
+        changing={rateChanging}
+        visible={speedOsdVisible}
+      />
       <SeekOSD text={seekOsdText} visible={seekOsdVisible} />
 
       {controlsVisible && (
@@ -593,6 +703,33 @@ export function PlayerScreen() {
               >
                 <ArrowLeft size={16} />
               </button>
+              {/* Only worth showing while the speed is off its default — at 1x
+                  there is nothing to reset and nothing worth reporting. */}
+              {playbackRate !== 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); resetRate() }}
+                    title="Reset speed to 1.0×"
+                    aria-label="Reset playback speed"
+                    style={{
+                      background: 'rgba(255,255,255,0.15)',
+                      borderRadius: '50%',
+                      width: 30,
+                      height: 30,
+                      padding: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    <RotateCcw size={15} />
+                  </button>
+                  <span style={{ fontSize: 13, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
+                    {formatRate(playbackRate)}
+                  </span>
+                </div>
+              )}
               <span style={{ fontSize: 14, fontWeight: 500 }}>
                 {currentVideo?.name || ''}
               </span>
