@@ -23,6 +23,13 @@
 
 FunnyPlayer is built around FunScript support, but works perfectly as a standalone video player too — just create a profile with FunScript disabled and use it like any other player.
 
+## NEW
+<img width="638" height="650" alt="image" src="https://github.com/user-attachments/assets/bc88170d-03e7-4aad-9454-16aab35eebd0" />
+
+- Preferences to limit Motion Range under Handy -> Preferences
+- Allows adjusting playback speed for Video and Script with + and -
+- Faster script sync: Now takes around 1 second to sync to device and start moving (Before: 15 seconds)
+
 ## Features
 
 ### Playback
